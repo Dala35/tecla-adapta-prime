@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TECLA Adapta PRIME – IA Inclusiva</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f8ff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      font-size: 18px;
+    }
+
+    header {
+      background-color: #005b99;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      background-color: #007acc;
+      padding: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    nav button, #perfilSelect {
+      background: transparent;
+      border: none;
+      color: white;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    nav button:hover, #perfilSelect:hover {
+      background-color: #3399ff;
+    }
+
+    main {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .user-msg, .bot-msg {
+      max-width: 75%;
+      padding: 0.75rem;
+      border-radius: 12px;
+      font-size: 18px;
+      line-height: 1.4;
+    }
+
+    .user-msg {
+      align-self: flex-end;
+      background-color: #d9edf7;
+    }
+
+    .bot-msg {
+      align-self: flex-start;
+      background-color: #fff3cd;
+    }
+
+    footer {
+      padding: 0.5rem;
+      background: #ccc;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    input, select {
+      flex: 1;
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: 1px solid #999;
+      border-radius: 6px;
+    }
+
+    button.send, .emo-btn {
+      padding: 0.75rem 1rem;
+      background: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .emo-btn {
+      font-size: 1.2rem;
+      background-color: #005fa3;
+    }
+
+    button.send:hover, .emo-btn:hover {
+      background-color: #004f8a;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TECLA Adapta PRIME – IA Inclusiva</h1>
+  </header>
+
+  <nav>
+    <div>
+      <button onclick="showTab('chat')">💬 Conversar</button>
+      <button onclick="showTab('sobre')">ℹ️ Sobre</button>
+      <button onclick="showTab('ajuda')">🧭 Ajuda</button>
+    </div>
+    <div>
+      <select id="perfilSelect" onchange="trocarPerfil()">
+        <option value="padrao">👤 Padrão</option>
+        <option value="joao">João</option>
+        <option value="maria">Maria</option>
+      </select>
+    </div>
+  </nav>
+
+  <main id="chat" class="tab">
+    <div class="chat-container" id="chatBox"></div>
+  </main>
+
+  <main id="sobre" class="tab" style="display:none">
+    <h2>Sobre o TECLA</h2>
+    <p>TECLA Adapta é um projeto criado por Dala De Carvalho para oferecer apoio na comunicação de pessoas com autismo ou dificuldades de expressão verbal.</p>
+  </main>
+
+  <main id="ajuda" class="tab" style="display:none">
+    <h2>Como Usar</h2>
+    <p>Você pode digitar, falar ou clicar nos botões abaixo para se comunicar com o TECLA.</p>
+    <p>Se o TECLA não souber uma resposta, ele vai perguntar se você quer ensiná-lo. Ele aprenderá automaticamente.</p>
+  </main>
+
+  <footer>
+    <input type="text" id="userInput" placeholder="Digite ou fale aqui..." onkeypress="if(event.key==='Enter') sendMessage()"/>
+    <button class="send" onclick="sendMessage()">Enviar</button>
+    <button class="send" onclick="startListening()">🎙️ Falar</button>
+    <button class="emo-btn" onclick="quickSay('🙂 Estou feliz')">🙂</button>
+    <button class="emo-btn" onclick="quickSay('😢 Estou triste')">😢</button>
+    <button class="emo-btn" onclick="quickSay('😡 Estou zangado')">😡</button>
+    <button class="emo-btn" onclick="quickSay('🧡 Quero um abraço')">🧡</button>
+    <button class="emo-btn" onclick="quickSay('🍽️ Estou com fome')">🍽️</button>
+    <button class="emo-btn" onclick="quickSay('🚽 Preciso ir ao banheiro')">🚽</button>
+    <select id="vozSelect" title="Selecionar voz"></select>
+    <button onclick="baixarDados()">⬇️ Exportar</button>
+    <button onclick="document.getElementById('backupFile').click()">⬆️ Importar</button>
+    <input type="file" id="backupFile" style="display:none" onchange="lerBackup(this)">
+  </footer>
+
+  <script>
+    let perfilAtual = "padrao";
+    let respostas = JSON.parse(localStorage.getItem("respostas_" + perfilAtual) || "{}");
+
+    const chatBox = document.getElementById("chatBox");
+
+    function showTab(id) {
+      document.querySelectorAll("main.tab").forEach(el => el.style.display = "none");
+      document.getElementById(id).style.display = "block";
+    }
+
+    function addMessage(msg, sender) {
+      const el = document.createElement("div");
+      el.className = sender === "user" ? "user-msg" : "bot-msg";
+      el.textContent = msg;
+      chatBox.appendChild(el);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function falar(texto) {
+      const synth = window.speechSynthesis;
+      const utter = new SpeechSynthesisUtterance(texto);
+      const selectedVoice = document.getElementById("vozSelect").value;
+      if (selectedVoice) {
+        utter.voice = synth.getVoices().find(v => v.name === selectedVoice);
+      }
+      utter.lang = "pt-PT";
+      synth.speak(utter);
+    }
+
+    function sendMessage() {
+      const input = document.getElementById("userInput");
+      const texto = input.value.trim().toLowerCase();
+      if (!texto) return;
+
+      addMessage("👤 " + texto, "user");
+
+      if (respostas[texto]) {
+        const resposta = respostas[texto].resposta || respostas[texto];
+        addMessage("🤖 " + resposta, "bot");
+        falar(resposta);
+      } else if (texto.includes("dala")) {
+        const r = "🤖 Eu reconheço o Criador Dala De Carvalho! Obrigado por me dar vida.";
+        addMessage(r, "bot");
+        falar(r);
+      } else {
+        const pergunta = `❓ Não sei responder a isso ainda. Deseja ensinar-me?`;
+        addMessage(pergunta, "bot");
+        falar(pergunta);
+        setTimeout(() => {
+          const ensino = prompt("Digite a resposta para: " + texto);
+          if (ensino) {
+            respostas[texto] = {
+              resposta: ensino,
+              data: new Date().toISOString()
+            };
+            localStorage.setItem("respostas_" + perfilAtual, JSON.stringify(respostas));
+            addMessage("✔️ Aprendi: " + ensino, "bot");
+            falar(ensino);
+          }
+        }, 500);
+      }
+
+      input.value = "";
+    }
+
+    function quickSay(texto) {
+      document.getElementById("userInput").value = texto;
+      sendMessage();
+    }
+
+    function startListening() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Seu navegador não suporta voz.");
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = "pt-PT";
+      recognition.onresult = (event) => {
+        document.getElementById("userInput").value = event.results[0][0].transcript;
+        sendMessage();
+      };
+      recognition.start();
+    }
+
+    function trocarPerfil() {
+      perfilAtual = document.getElementById("perfilSelect").value;
+      respostas = JSON.parse(localStorage.getItem("respostas_" + perfilAtual) || "{}");
+      addMessage("🔄 Perfil alterado para: " + perfilAtual, "bot");
+    }
+
+    function baixarDados() {
+      const blob = new Blob([JSON.stringify(respostas)], {type: "application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `tecla_${perfilAtual}.json`;
+      a.click();
+    }
+
+    function lerBackup(input) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          respostas = JSON.parse(reader.result);
+          localStorage.setItem("respostas_" + perfilAtual, JSON.stringify(respostas));
+          addMessage("✔️ Backup restaurado!", "bot");
+        } catch {
+          alert("Erro ao importar arquivo.");
+        }
+      };
+      reader.readAsText(input.files[0]);
+    }
+
+    function popularVozes() {
+      const synth = window.speechSynthesis;
+      const select = document.getElementById("vozSelect");
+      synth.onvoiceschanged = () => {
+        select.innerHTML = "";
+        const vozes = synth.getVoices().filter(v => v.lang.includes("pt"));
+        vozes.forEach(voz => {
+          const opt = document.createElement("option");
+          opt.value = voz.name;
+          opt.textContent = voz.name;
+          select.appendChild(opt);
+        });
+      };
+    }
+
+    popularVozes();
+  </script>
+</body>
+</html>
