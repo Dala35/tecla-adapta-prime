@@ -161,68 +161,69 @@
     <button onclick="document.getElementById('backupFile').click()">⬆️ Importar</button>
     <input type="file" id="backupFile" style="display:none" onchange="lerBackup(this)">
   </footer>
+<script>
+  // === MÓDULO CLIMA ===
+  async function verificarClima() {
+    const chaveAPI = "9b9190847d09c965d6156e1b32bff3ad"; // ← Substitua aqui
+    const cidade = "São Paulo"; // Você pode tornar isso dinâmico depois
 
-  <script>
-    let perfilAtual = "padrao";
-    let respostas = JSON.parse(localStorage.getItem("respostas_" + perfilAtual) || "{}");
+    try {
+      const resposta = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${cidade}&units=metric&lang=pt_br&appid=${chaveAPI}`);
+      const dados = await resposta.json();
 
-    const chatBox = document.getElementById("chatBox");
-
-    function showTab(id) {
-      document.querySelectorAll("main.tab").forEach(el => el.style.display = "none");
-      document.getElementById(id).style.display = "block";
-    }
-
-    function addMessage(msg, sender) {
-      const el = document.createElement("div");
-      el.className = sender === "user" ? "user-msg" : "bot-msg";
-      el.textContent = msg;
-      chatBox.appendChild(el);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function falar(texto) {
-      const synth = window.speechSynthesis;
-      const utter = new SpeechSynthesisUtterance(texto);
-      const selectedVoice = document.getElementById("vozSelect").value;
-      if (selectedVoice) {
-        utter.voice = synth.getVoices().find(v => v.name === selectedVoice);
-      }
-      utter.lang = "pt-PT";
-      synth.speak(utter);
-    }
-
-    function sendMessage() {
-      const input = document.getElementById("userInput");
-      const texto = input.value.trim().toLowerCase();
-      if (!texto) return;
-
-      addMessage("👤 " + texto, "user");
-
-      if (respostas[texto]) {
-        const resposta = respostas[texto].resposta || respostas[texto];
-        addMessage("🤖 " + resposta, "bot");
-        falar(resposta);
-      } else if (texto.includes("dala")) {
-        const r = "🤖 Eu reconheço o Criador Dala De Carvalho! Obrigado por me dar vida.";
-        addMessage(r, "bot");
-        falar(r);
+      if (dados.main) {
+        const climaTexto = `🌦️ O clima em ${cidade} está ${dados.weather[0].description}, com temperatura de ${dados.main.temp}°C e sensação térmica de ${dados.main.feels_like}°C.`;
+        addMessage(climaTexto, "bot");
+        falar(climaTexto);
       } else {
-        const pergunta = `❓ Não sei responder a isso ainda. Deseja ensinar-me?`;
-        addMessage(pergunta, "bot");
-        falar(pergunta);
-        setTimeout(() => {
-          const ensino = prompt("Digite a resposta para: " + texto);
-          if (ensino) {
-            respostas[texto] = {
-              resposta: ensino,
-              data: new Date().toISOString()
-            };
-            localStorage.setItem("respostas_" + perfilAtual, JSON.stringify(respostas));
-            addMessage("✔️ Aprendi: " + ensino, "bot");
-            falar(ensino);
-          }
-        }, 500);
+        addMessage("❌ Não consegui obter os dados do clima agora.", "bot");
+      }
+    } catch (erro) {
+      addMessage("⚠️ Erro ao acessar o serviço de clima.", "bot");
+    }
+  }
+
+  // Integra ao envio de mensagens
+  function sendMessage() {
+    const input = document.getElementById("userInput");
+    const texto = input.value.trim().toLowerCase();
+    if (!texto) return;
+
+    addMessage("👤 " + texto, "user");
+
+    if (respostas[texto]) {
+      const resposta = respostas[texto].resposta || respostas[texto];
+      addMessage("🤖 " + resposta, "bot");
+      falar(resposta);
+    } else if (texto.includes("clima") || texto.includes("temperatura")) {
+      verificarClima();
+    } else if (texto.includes("dala")) {
+      const r = "🤖 Eu reconheço o Criador Dala De Carvalho! Obrigado por me dar vida.";
+      addMessage(r, "bot");
+      falar(r);
+    } else {
+      const pergunta = `❓ Não sei responder a isso ainda. Deseja ensinar-me?`;
+      addMessage(pergunta, "bot");
+      falar(pergunta);
+      setTimeout(() => {
+        const ensino = prompt("Digite a resposta para: " + texto);
+        if (ensino) {
+          respostas[texto] = {
+            resposta: ensino,
+            data: new Date().toISOString()
+          };
+          localStorage.setItem("respostas_" + perfilAtual, JSON.stringify(respostas));
+          addMessage("✔️ Aprendi: " + ensino, "bot");
+          falar(ensino);
+        }
+      }, 500);
+    }
+
+    input.value = "";
+  }
+</script>
+
+ 
       }
 
       input.value = "";
