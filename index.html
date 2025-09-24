@@ -161,6 +161,109 @@
     <button onclick="document.getElementById('backupFile').click()">⬆️ Importar</button>
     <input type="file" id="backupFile" style="display:none" onchange="lerBackup(this)">
   </footer>
+<script>
+  // === MÓDULO BUSCA ONLINE ===
+  async function realizarBuscaOnline(query) {
+    const chaveAPI = " 1b26890131db18b633763f770a983a456fe1cef68b0e3f245acae41478dbd287"; // Substitua com sua chave API do SerpAPI
+    const url = `https://serpapi.com/search?q=${encodeURIComponent(query)}&api_key=${chaveAPI}`;
+
+    try {
+      const resposta = await fetch(url);
+      const dados = await resposta.json();
+
+      if (dados && dados.organic_results) {
+        let texto = `🔍 Resultados da busca para "${query}":`;
+        dados.organic_results.forEach((resultado, index) => {
+          if (index < 3) { // Limite de 3 resultados para não sobrecarregar
+            texto += `\n\n${index + 1}. ${resultado.title}\nLink: ${resultado.link}`;
+          }
+        });
+
+        addMessage(texto, "bot");
+        falar(texto);
+      } else {
+        addMessage("❌ Não encontrei resultados para a sua busca.", "bot");
+      }
+    } catch (erro) {
+      addMessage("⚠️ Erro ao realizar a busca online.", "bot");
+    }
+  }
+
+  // Atualiza a função sendMessage para reconhecer comandos de busca online
+  function sendMessage() {
+    const input = document.getElementById("userInput");
+    const texto = input.value.trim().toLowerCase();
+    if (!texto) return;
+
+    addMessage("👤 " + texto, "user");
+
+    if (respostas[texto]) {
+      const resposta = respostas[texto].resposta || respostas[texto];
+      addMessage("🤖 " + resposta, "bot");
+      falar(resposta);
+    } else if (texto.includes("clima") || texto.includes("temperatura")) {
+      verificarClima();
+    } else if (
+      texto.startsWith("o que é") ||
+      texto.startsWith("o que significa") ||
+      texto.startsWith("explique") ||
+      texto.startsWith("defina")
+    ) {
+      const palavra = texto
+        .replace("o que é", "")
+        .replace("o que significa", "")
+        .replace("explique", "")
+        .replace("defina", "")
+        .trim();
+      if (palavra) {
+        consultarDicionario(palavra);
+      } else {
+        addMessage("❓ Qual palavra você quer que eu explique?", "bot");
+        falar("Qual palavra você quer que eu explique?");
+      }
+    } else if (texto.includes("traduzir para")) {
+      const partes = texto.split("para");
+      const frase = partes[0].replace("traduzir", "").trim();
+      const idiomaDestino = partes[1] ? partes[1].trim() : "en"; // Por padrão, traduzi para inglês
+      if (frase) {
+        traduzirTexto(frase, idiomaDestino);
+      } else {
+        addMessage("❓ Por favor, forneça o texto para tradução.", "bot");
+        falar("Por favor, forneça o texto para tradução.");
+      }
+    } else if (texto.includes("pesquise sobre") || texto.includes("encontre informações sobre") || texto.includes("última notícia sobre")) {
+      const query = texto.replace("pesquise sobre", "").replace("encontre informações sobre", "").replace("última notícia sobre", "").trim();
+      if (query) {
+        realizarBuscaOnline(query);
+      } else {
+        addMessage("❓ Por favor, forneça o assunto que deseja pesquisar.", "bot");
+        falar("Por favor, forneça o assunto que deseja pesquisar.");
+      }
+    } else if (texto.includes("dala")) {
+      const r = "🤖 Eu reconheço o Criador Dala De Carvalho! Obrigado por me dar vida.";
+      addMessage(r, "bot");
+      falar(r);
+    } else {
+      const pergunta = `❓ Não sei responder a isso ainda. Deseja ensinar-me?`;
+      addMessage(pergunta, "bot");
+      falar(pergunta);
+      setTimeout(() => {
+        const ensino = prompt("Digite a resposta para: " + texto);
+        if (ensino) {
+          respostas[texto] = {
+            resposta: ensino,
+            data: new Date().toISOString()
+          };
+          localStorage.setItem("respostas_" + perfilAtual, JSON.stringify(respostas));
+          addMessage("✔️ Aprendi: " + ensino, "bot");
+          falar(ensino);
+        }
+      }, 500);
+    }
+
+    input.value = "";
+  }
+</script>
 
   <script>
     let perfilAtual = "padrao";
