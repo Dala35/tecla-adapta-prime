@@ -207,6 +207,8 @@
         const r = "🤖 Eu reconheço o Criador Dala De Carvalho! Obrigado por me dar vida.";
         addMessage(r, "bot");
         falar(r);
+      } else if (texto.includes("clima") || texto.includes("temperatura")) {
+        verificarClima();
       } else {
         const pergunta = `❓ Não sei responder a isso ainda. Deseja ensinar-me?`;
         addMessage(pergunta, "bot");
@@ -247,66 +249,28 @@
       };
       recognition.start();
     }
-<script>
-  // === MÓDULO CLIMA ===
-  async function verificarClima() {
-    const chaveAPI = "9b9190847d09c965d6156e1b32bff3ad"; // ← Substitua aqui
-    const cidade = "São Paulo"; // Você pode tornar isso dinâmico depois
 
-    try {
-      const resposta = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${cidade}&units=metric&lang=pt_br&appid=${chaveAPI}`);
-      const dados = await resposta.json();
+    // === MÓDULO CLIMA ===
+    async function verificarClima() {
+      const chaveAPI = "9b9190847d09c965d6156e1b32bff3ad"; // ← Substitua aqui
+      const cidade = "São Paulo"; // Você pode tornar isso dinâmico depois
 
-      if (dados.main) {
-        const climaTexto = `🌦️ O clima em ${cidade} está ${dados.weather[0].description}, com temperatura de ${dados.main.temp}°C e sensação térmica de ${dados.main.feels_like}°C.`;
-        addMessage(climaTexto, "bot");
-        falar(climaTexto);
-      } else {
-        addMessage("❌ Não consegui obter os dados do clima agora.", "bot");
-      }
-    } catch (erro) {
-      addMessage("⚠️ Erro ao acessar o serviço de clima.", "bot");
-    }
-  }
+      try {
+        const resposta = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${cidade}&units=metric&lang=pt_br&appid=${chaveAPI}`);
+        const dados = await resposta.json();
 
-  // Integra ao envio de mensagens
-  function sendMessage() {
-    const input = document.getElementById("userInput");
-    const texto = input.value.trim().toLowerCase();
-    if (!texto) return;
-
-    addMessage("👤 " + texto, "user");
-
-    if (respostas[texto]) {
-      const resposta = respostas[texto].resposta || respostas[texto];
-      addMessage("🤖 " + resposta, "bot");
-      falar(resposta);
-    } else if (texto.includes("clima") || texto.includes("temperatura")) {
-      verificarClima();
-    } else if (texto.includes("dala")) {
-      const r = "🤖 Eu reconheço o Criador Dala De Carvalho! Obrigado por me dar vida.";
-      addMessage(r, "bot");
-      falar(r);
-    } else {
-      const pergunta = `❓ Não sei responder a isso ainda. Deseja ensinar-me?`;
-      addMessage(pergunta, "bot");
-      falar(pergunta);
-      setTimeout(() => {
-        const ensino = prompt("Digite a resposta para: " + texto);
-        if (ensino) {
-          respostas[texto] = {
-            resposta: ensino,
-            data: new Date().toISOString()
-          };
-          localStorage.setItem("respostas_" + perfilAtual, JSON.stringify(respostas));
-          addMessage("✔️ Aprendi: " + ensino, "bot");
-          falar(ensino);
+        if (dados.main) {
+          const climaTexto = `🌦️ O clima em ${cidade} está ${dados.weather[0].description}, com temperatura de ${dados.main.temp}°C e sensação térmica de ${dados.main.feels_like}°C.`;
+          addMessage(climaTexto, "bot");
+          falar(climaTexto);
+        } else {
+          addMessage("❌ Não consegui obter os dados do clima agora.", "bot");
         }
-      }, 500);
+      } catch (erro) {
+        addMessage("⚠️ Erro ao acessar o serviço de clima.", "bot");
+      }
     }
 
-    input.value = "";
-  }
     function trocarPerfil() {
       perfilAtual = document.getElementById("perfilSelect").value;
       respostas = JSON.parse(localStorage.getItem("respostas_" + perfilAtual) || "{}");
