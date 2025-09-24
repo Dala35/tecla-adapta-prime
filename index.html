@@ -162,9 +162,9 @@
     <input type="file" id="backupFile" style="display:none" onchange="lerBackup(this)">
   </footer>
 <script>
-  // === MÓDULO BUSCA ONLINE E AUTONOMA ===
+  // === MÓDULO BUSCA ONLINE ATIVAR MODO AUTONOMIA ===
   async function realizarBuscaOnline(query) {
-    const chaveAPI = " 1b26890131db18b633763f770a983a456fe1cef68b0e3f245acae41478dbd287"; // Substitua com sua chave API do SerpAPI
+    const chaveAPI = " 1b26890131db18b633763f770a983a456fe1cef68b0e3f245acae41478dbd287";
     const url = `https://serpapi.com/search?q=${encodeURIComponent(query)}&api_key=${chaveAPI}`;
 
     try {
@@ -188,78 +188,144 @@
       addMessage("⚠️ Erro ao realizar a busca online.", "bot");
     }
   }
+function sendMessage() {
+  const input = document.getElementById("userInput");
+  const texto = input.value.trim().toLowerCase();
+  if (!texto) return;
 
-  // Atualiza a função sendMessage para reconhecer comandos de busca online
-  function sendMessage() {
-    const input = document.getElementById("userInput");
-    const texto = input.value.trim().toLowerCase();
-    if (!texto) return;
+  addMessage("👤 " + texto, "user");
 
-    addMessage("👤 " + texto, "user");
-
-    if (respostas[texto]) {
-      const resposta = respostas[texto].resposta || respostas[texto];
-      addMessage("🤖 " + resposta, "bot");
-      falar(resposta);
-    } else if (texto.includes("clima") || texto.includes("temperatura")) {
-      verificarClima();
-    } else if (
-      texto.startsWith("o que é") ||
-      texto.startsWith("o que significa") ||
-      texto.startsWith("explique") ||
-      texto.startsWith("defina")
-    ) {
-      const palavra = texto
-        .replace("o que é", "")
-        .replace("o que significa", "")
-        .replace("explique", "")
-        .replace("defina", "")
-        .trim();
-      if (palavra) {
-        consultarDicionario(palavra);
-      } else {
-        addMessage("❓ Qual palavra você quer que eu explique?", "bot");
-        falar("Qual palavra você quer que eu explique?");
-      }
-    } else if (texto.includes("traduzir para")) {
-      const partes = texto.split("para");
-      const frase = partes[0].replace("traduzir", "").trim();
-      const idiomaDestino = partes[1] ? partes[1].trim() : "en"; // Por padrão, traduzi para inglês
-      if (frase) {
-        traduzirTexto(frase, idiomaDestino);
-      } else {
-        addMessage("❓ Por favor, forneça o texto para tradução.", "bot");
-        falar("Por favor, forneça o texto para tradução.");
-      }
-    } else if (texto.includes("pesquise sobre") || texto.includes("encontre informações sobre") || texto.includes("última notícia sobre")) {
-      const query = texto.replace("pesquise sobre", "").replace("encontre informações sobre", "").replace("última notícia sobre", "").trim();
-      if (query) {
-        realizarBuscaOnline(query);
-      } else {
-        addMessage("❓ Por favor, forneça o assunto que deseja pesquisar.", "bot");
-        falar("Por favor, forneça o assunto que deseja pesquisar.");
-      }
-    } else if (texto.includes("dala")) {
-      const r = "🤖 Eu reconheço o Criador Dala De Carvalho! Obrigado por me dar vida.";
-      addMessage(r, "bot");
-      falar(r);
+  // Verifica se a resposta já foi aprendida
+  if (respostas[texto]) {
+    const resposta = respostas[texto].resposta || respostas[texto];
+    addMessage("🤖 " + resposta, "bot");
+    falar(resposta);
+  } 
+  // Comando para consultar o clima
+  else if (texto.includes("clima") || texto.includes("temperatura")) {
+    verificarClima();
+  } 
+  // Comando de definição de palavras
+  else if (
+    texto.startsWith("o que é") ||
+    texto.startsWith("o que significa") ||
+    texto.startsWith("explique") ||
+    texto.startsWith("defina")
+  ) {
+    const palavra = texto
+      .replace("o que é", "")
+      .replace("o que significa", "")
+      .replace("explique", "")
+      .replace("defina", "")
+      .trim();
+    if (palavra) {
+      consultarDicionario(palavra);
     } else {
-      const pergunta = `❓ Não sei responder a isso ainda. Deseja ensinar-me?`;
-      addMessage(pergunta, "bot");
-      falar(pergunta);
-      setTimeout(() => {
-        const ensino = prompt("Digite a resposta para: " + texto);
-        if (ensino) {
-          respostas[texto] = {
-            resposta: ensino,
-            data: new Date().toISOString()
-          };
-          localStorage.setItem("respostas_" + perfilAtual, JSON.stringify(respostas));
-          addMessage("✔️ Aprendi: " + ensino, "bot");
-          falar(ensino);
-        }
-      }, 500);
+      addMessage("❓ Qual palavra você quer que eu explique?", "bot");
+      falar("Qual palavra você quer que eu explique?");
     }
+  } 
+  // Comando de tradução
+  else if (texto.includes("traduzir para")) {
+    const partes = texto.split("para");
+    const frase = partes[0].replace("traduzir", "").trim();
+    const idiomaDestino = partes[1] ? partes[1].trim() : "en"; // Traduzir para inglês por padrão
+    if (frase) {
+      traduzirTexto(frase, idiomaDestino);
+    } else {
+      addMessage("❓ Por favor, forneça o texto para tradução.", "bot");
+      falar("Por favor, forneça o texto para tradução.");
+    }
+  } 
+  // Comando para realizar uma busca online
+  else if (texto.includes("pesquise sobre") || texto.includes("encontre informações sobre") || texto.includes("última notícia sobre")) {
+    const query = texto.replace("pesquise sobre", "")
+                        .replace("encontre informações sobre", "")
+                        .replace("última notícia sobre", "")
+                        .trim();
+    if (query) {
+      realizarBuscaOnline(query);
+    } else {
+      addMessage("❓ Por favor, forneça o assunto que deseja pesquisar.", "bot");
+      falar("Por favor, forneça o assunto que deseja pesquisar.");
+    }
+  } 
+  // Reconhecimento do criador
+  else if (texto.includes("dala")) {
+    const r = "🤖 Eu reconheço o Criador Dala De Carvalho! Obrigado por me dar vida.";
+    addMessage(r, "bot");
+    falar(r);
+  } 
+  // Caso o comando não seja reconhecido
+  else {
+    const pergunta = `❓ Não sei responder a isso ainda. Deseja ensinar-me?`;
+    addMessage(pergunta, "bot");
+    falar(pergunta);
+    setTimeout(() => {
+      const ensino = prompt("Digite a resposta para: " + texto);
+      if (ensino) {
+        respostas[texto] = {
+          resposta: ensino,
+          data: new Date().toISOString()
+        };
+        localStorage.setItem("respostas_" + perfilAtual, JSON.stringify(respostas));
+        addMessage("✔️ Aprendi: " + ensino, "bot");
+        falar(ensino);
+      }
+    }, 500);
+  }
+}
+
+// Função para consultar o dicionário online
+async function consultarDicionario(palavra) {
+  try {
+    const resposta = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/pt/${palavra}`);
+    const dados = await resposta.json();
+
+    if (dados && dados[0] && dados[0].meanings) {
+      const significado = dados[0].meanings[0].definitions[0].definition;
+      const resposta = `🔍 A palavra "${palavra}" significa: ${significado}`;
+      addMessage(resposta, "bot");
+      falar(resposta);
+    } else {
+      addMessage(`❓ Não encontrei um significado para a palavra "${palavra}".`, "bot");
+      falar(`Não encontrei um significado para a palavra "${palavra}".`);
+    }
+  } catch (erro) {
+    addMessage("❌ Ocorreu um erro ao tentar consultar o dicionário.", "bot");
+    falar("Ocorreu um erro ao tentar consultar o dicionário.");
+  }
+}
+
+// Função para tradução
+async function traduzirTexto(frase, idiomaDestino) {
+  try {
+    const resposta = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(frase)}&langpair=pt|${idiomaDestino}`);
+    const dados = await resposta.json();
+    if (dados.responseData && dados.responseData.translatedText) {
+      const traducao = dados.responseData.translatedText;
+      const resposta = `🌍 Tradução para ${idiomaDestino}: ${traducao}`;
+      addMessage(resposta, "bot");
+      falar(resposta);
+    } else {
+      addMessage("❌ Não consegui traduzir o texto. Tente novamente.", "bot");
+      falar("Não consegui traduzir o texto. Tente novamente.");
+    }
+  } catch (erro) {
+    addMessage("❌ Ocorreu um erro ao tentar traduzir o texto.", "bot");
+    falar("Ocorreu um erro ao tentar traduzir o texto.");
+  }
+}
+
+// Função para realizar uma busca online (usando Google Search)
+function realizarBuscaOnline(query) {
+  const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+  window.open(url, "_blank");
+  addMessage(`🔍 Buscando informações sobre "${query}"...`, "bot");
+  falar(`Buscando informações sobre "${query}"...`);
+}
+
+  
 
     input.value = "";
   }
